@@ -1,0 +1,332 @@
+---
+title: "112 Final Exam"
+author: "Sofia Savchuk"
+date: "2023-05-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I pledge my honor that I have abided by the Stevens Honor System.
+
+By filling out the following fields, you are signing this pledge.  No assignment will get credit without being pledged.
+
+Name: Sofia Savchuk
+
+CWID: 20006469
+
+Date: 05/04/2023
+
+
+
+```{r}
+CWID = 20006469 #Place here your Campus wide ID number, this will personalize
+#your results, but still maintain the reproduceable nature of using seeds.
+#If you ever need to reset the seed in this assignment, use this as your seed
+#Papers that use -1 as this CWID variable will earn 0's so make sure you change
+#this value before you submit your work.
+personal = CWID %% 10000
+set.seed(personal)
+```
+
+
+Unless otherwise stated, you're allowed to use lm().
+
+
+# Question 1. 
+Seasonality is a crucial aspect of many business predictions.  Here we'll look at one way to address it.  The file 'temp.csv' contains average monthly temperatures in NJ.  You'll need to write a model that predicts them.
+
+## part a)  
+For just this part, you should handle this without using the lm() function (this is just a simple linear regression, so you can handle it without it). Regress the temperature on the year and find the slope plus associated t-value and p-value along with the value of R^2. Do these results make sense?   
+
+```{r}
+#B0 = intercept 
+#B1 = slope 
+#R^2 = 1 - RSS/TSS2
+temp = read.csv("temp.csv")
+
+y = temp$Temp
+
+x = temp$Year
+
+meanx = mean(x)
+meany = mean(y)
+
+#Finding the slope
+B1 = sum((x-meanx)*(y-meany))/(sum((x-meanx)^2))
+
+#Finding the intercept 
+B0 = meany - B1*meanx
+
+yhat=B0+B1*x
+
+RSS=sum((y-yhat)^2)
+
+TSS=sum((y-meany)^2)
+
+#Calculate R^2
+R2=1-RSS/TSS
+
+n= length(x)
+
+#Sum of squared errors
+SSE= sum((y-yhat)^2)
+
+#Sum of squared x vals 
+SSX = sum((x-meanx)^2)
+
+#standard error
+SES= sqrt((1-R2)*SSE/(n-2))/sqrt(SSX)
+
+t_val = B1 / SES
+
+p_val= 2*pt(-abs(t_val), df = n-2)
+
+print(B1)
+print(t_val)
+print(p_val)
+print(R2)
+print(p_val<0.05)
+
+
+#Check values 
+fit = lm(y ~ x)
+summary(fit)
+
+```
+#Do these results make sense? In these results, our p value is less than 0.05, meaning that the slope is statistically significant. Because The adjusted R^2 value is 0.0036, this means that the year explains about 0.36% of the variability in the temperature. This makes sense, because the year has little to no effect on the weather, whereas looking at something like the month where you can determine the season, would have a greater variability in the temperature. 
+
+## part b)
+
+Run an ANOVA analysis to determine if the average temperature depends on the month. Are these results expected?  
+
+```{r}
+y = temp$Temp
+z = temp$Month
+output = anova(lm(y ~ z))
+output
+summary(output)
+```
+#Are these results expected? The null hypothesis of an anova test is that there is no difference among group means. In this case, because our p value is so small, we can reject the null and say that the groups do have a difference on the means. This makes sense because, as I said in the previous answer, months would have a significant impact on the temperature. 
+
+## part c)
+Split your data into two random sets of equal size designating one as the training set and one as the test set. Using the training data, train a regression model to predict temperatures based on the month and year. Report your coefficients, p-values, adj R^2, and in sample MSE.
+
+```{r}
+temp = read.csv("temp.csv")
+
+set.seed(20006469)
+
+n = length(temp$Year)
+
+train = sample(n, n/2)
+
+train_data <- temp[train, ]
+test_data <- temp[-train, ]
+
+# train a linear regression model using the training data
+model_fit = lm(Temp ~ Month + Year, data = train_data)
+summary(model_fit)
+
+# print the coefficients and p-values
+summary(model_fit)$coef
+
+# calculate the adjusted R-squared
+n = nrow(train_data)
+p =  length(model_fit$coefficients) - 1
+adj_r2 = 1 - (1 - summary(model_fit)$r.squared) * (n - 1) / (n - p - 1)
+
+# calculate the in-sample mean squared error
+mse <- mean(resid(model_fit) ^ 2)
+
+print(adj_r2)
+print(mse)
+print(p)
+
+
+```
+
+
+## part d)
+Compare this to the MSE when predictions are made on the test set.  Which one is higher?
+
+```{r}
+train_pred = predict(model_fit, test_data)
+print(train_pred)
+predictor = train_pred - test_data$Temp
+mean(predictor^2)
+```
+#The predictions made on the test set are higher, at 8.98, whereas the MSE for predictions made with the training set are 8.27. 
+
+
+## part e)
+Use your model to predict the average monthly temperature for Stevens QF students when they take their finals in the year 2100
+
+```{r}
+2100*0.028+10.4
+```
+#This is essentially the deconstructed and manual way of finding the temperature instead of using the predictor function. I. used the linear regression data from the training data in part b. Looking at the coefficients, the estimate for the year is 0.028, so I multiplied that by the year asked in the question, 2100. But since we know year is not a good predictor of temperature, we also have to add on the month. So since we take finals in May, I looked at the coefficient for May, which is 10.4, and added that to the equation. This gave me a value of 69.2, which is the prediction for the average monthly temp for QF students taking their final in 2100. 
+
+
+# Question 2
+
+For this problem, use the file housing_data.csv. You are free to use lm(). 
+
+## part a)
+
+
+Provide a summary of each of the variables in this data set using the summary command.
+
+
+```{r}
+housing = read.csv("housing_data.csv")
+summary(housing)
+```
+
+
+## part b) 
+
+
+Create two linear regressions, each with the dependent variable being price and the independent variables as follows:
+
+1) bedrooms, bathrooms, sqft_living, floors
+
+```{r}
+#dependent = price 
+#independent = other variables 
+price = housing$price
+bedrooms = housing$bedrooms
+bathrooms = housing$bathrooms
+rooms = housing$rooms
+sqft_living = housing$sqft_living
+floors = housing$floors
+```
+
+
+```{r}
+model1 = lm(price ~ bedrooms + bathrooms + sqft_living + floors)
+summary(model1)
+```
+
+
+2) rooms, floors
+
+```{r}
+model2 = lm(price ~ rooms + floors)
+summary(model2)
+```
+
+
+## part c) 
+Create three linear regressions, each with the dependent variable being price and the independent variables as follows:
+
+1) bedrooms, sqft_living
+
+```{r}
+model3 = lm(price ~ bedrooms + sqft_living)
+summary(model3)
+```
+
+
+2) bathrooms, sqft_living
+
+```{r}
+model4 = lm(price ~ bathrooms + sqft_living)
+summary(model4)
+```
+
+
+3) rooms, sqft_living
+
+```{r}
+model5 = lm(price ~ rooms + sqft_living)
+summary(model5)
+```
+
+
+Which of these models do you think is best? Please briefly explain your reasoning, i.e. in a single sentence. 
+
+#Whichever value has the highest correlation coefficient (i.e. the highest adjusted R-sqaured) is the best model. Out of these models, model 3 is the best because it has the highest R-squared value.
+
+
+## part d) 
+
+Your friend looks at your results from part c and says, "given the slope of 'rooms,' a house with less rooms is always more valuable than one with more." Looking at your work in this question, do you agree with them? Why or why not? 
+
+```{r}
+rooms_value = lm(price ~ rooms)
+summary(rooms_value)
+```
+#Looking at coeffieicent of rooms, all the values are positive. This means there is a positive correlation between amount of rooms and price of house. Because of this, I would disagree with my friend because they said a house with less rooms is more valuable, whereas the data shows that a house with more rooms is more valuable. 
+
+# Question 3
+
+
+For this problem, use the file monkeys.csv. You are free to use lm(). 
+
+In an alternate universe, pictures of monkeys have become a major asset class. Financial institutions have started combining these monkey pictures into traded funds known as Monkey Backed Securities (MBS). The file "monkeys.csv" contains the last 500 daily returns of 40 MBS funds. 
+
+Your firm has started buying large amounts a new type of tradable security, known as a Combined Monkey Obligations (CMOs). For a CMO that is composed of forty different MBS's, it will earn a profit if at least 10 of these MBS funds earn a profit for a given day. Your job is to evaluate the risk profile of this CMO. 
+
+## part a) 
+
+The prevailing wisdom is that the returns for these MBS funds are independent and identically distributed. Under this assumption, first find the probability that an MBS will have a positive daily return, i.e. the percentage of these returns above 0. 
+
+
+Let $Y$ be the number of these 40 MBS funds that have a positive return in a given day. Using the probability you just found, run a Monte Carlo simulation 10,000 times to find the 90% CI for $Y$. Is 10 within this CI? 
+
+
+```{r}
+monkeys = read.csv("monkeys.csv", header = TRUE)
+
+prob_pos = sum(monkeys > 0) / (length(monkeys)*nrow(monkeys))
+prob_pos*100
+
+# set the number of simulations
+n = 10000
+
+y = numeric(n)
+
+for (i in 1:n) {
+  y[i] = sum(runif(40) < prob_pos)
+}
+
+# calculate the 90% confidence interval
+conf_int = quantile(y, c(0.05, 0.95))
+conf_int
+
+```
+#The probability that the MBS will have a positive return in 49.47% And no, 10 is not whithin the confidence interval. It's between 15 and 25
+
+## part b) 
+
+You decide to estimate the 90% CI of $Y$ empirically using a bootstrap. To do this, count how many MBS funds have a positive return for each of the last 200 days. Then sample these 200 counts 10,000 times and find the 90% CI. Is 10 within this CI?  
+
+```{r}
+
+last = tail(monkeys, 200)
+bootstrap = as.numeric(rowSums(last>0))
+sorter = sort(sample(bootstrap, 10000, TRUE))
+sorter[c(.05*10000, .95*10000)]
+
+```
+#Yes, 10 is within this confidence interval because the interval is between 2 and 38. 
+
+## part c) 
+
+
+Are these two CI the same? Does this result make sense?    
+
+#No, the confidence intervals are not the same. Yes, this does make sense. 
+
+## bonus) 
+
+Can you figure out why you got your result in part c? If so, explain why the two CI's are the same or different in a few sentences. It may be helpful to covariance matrix of the last 200 days of these 40 returns. 
+
+#In bootstrapping, datasets are generated by drawing samples with replacement from the original dataset. This means that the new datasets are the same size as the original, and may have some repeated values. In Monte Carlo, you are essentially finding the expected value. In the Monte Carlo simulation, we were sampling using probability while in the bootstrapping, we were sampling number of positive days. Because of this difference, each experienced different biases and deviations. This is why the two CI's were different. 
+
+
+
+
