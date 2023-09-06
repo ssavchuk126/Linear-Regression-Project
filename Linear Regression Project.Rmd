@@ -1,5 +1,5 @@
 ---
-title: "112 Final Exam"
+title: "Linear Regression Project"
 author: "Sofia Savchuk"
 date: "2023-05-04"
 output: pdf_document
@@ -18,21 +18,6 @@ Name: Sofia Savchuk
 CWID: 20006469
 
 Date: 05/04/2023
-
-
-
-```{r}
-CWID = 20006469 #Place here your Campus wide ID number, this will personalize
-#your results, but still maintain the reproduceable nature of using seeds.
-#If you ever need to reset the seed in this assignment, use this as your seed
-#Papers that use -1 as this CWID variable will earn 0's so make sure you change
-#this value before you submit your work.
-personal = CWID %% 10000
-set.seed(personal)
-```
-
-
-Unless otherwise stated, you're allowed to use lm().
 
 
 # Question 1. 
